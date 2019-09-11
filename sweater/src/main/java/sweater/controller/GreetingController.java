@@ -1,61 +1,77 @@
 package sweater.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import sweater.domain.Message;
-import sweater.repos.MessageRepo;
+import sweater.domain.User;
+import sweater.domain.Word;
+import sweater.repos.WordRepo;
 
-import java.util.List;
 import java.util.Map;
 
 @Controller
 public class GreetingController {
 
     @Autowired
-    private MessageRepo messageRepo;
+    private WordRepo wordRepo;
 
-    @GetMapping("/greeting")
-    public String greeting(@RequestParam(name = "name", required = false, defaultValue = "Vetal") String name, Map<String, Object> model){
-        model.put("name", name);
-        return "greeting";
-    }
-
-
-    @PostMapping
-    public String addMessage(@RequestParam (name = "text", required = false, defaultValue = "default text")String text,
-                                           @RequestParam (name = "tag", required = false, defaultValue = "dafault tag") String tag,
-                                           Map<String, Object> model){
-        Message message = new Message(text, tag);
-        messageRepo.save(message);
-        Iterable<Message> listOfMessages = messageRepo.findAll();
-        model.put("messages", listOfMessages);
-        return "main";
-    }
 
     @GetMapping("/")
-    public String main(Map<String, Object> model){
-        model.put("helloText", "hohohoho");
+    public String homePage(){
+        return "home";
+    }
+
+
+    @GetMapping("/main")
+    public String mainPage(Map<String, Object> model){
+        Iterable<Word> listOfWords = wordRepo.findAll();
+        model.put("words", listOfWords);
         return "main";
     }
 
-    @GetMapping("/showAll")
+    @PostMapping("/main")
+    public String addWord(
+            @AuthenticationPrincipal User user,
+            @RequestParam (name = "word")String word,
+            @RequestParam (name = "translation") String translation,
+            Map<String, Object> model){
+        Word wordToTranslate = new Word(word, translation, user);
+        wordRepo.save(wordToTranslate);
+        Iterable<Word> listOfWords = wordRepo.findAll();
+        model.put("words", listOfWords);
+        return "main";
+    }
+
+    @PostMapping("/")
     public String showAllMessages(Map<String, Object> model){
-        Iterable<Message> listOfMessages = messageRepo.findAll();
-        model.put("messages", listOfMessages);
+        Iterable<Word> listOfWords = wordRepo.findAll();
+        model.put("words", listOfWords);
         return "main";
     }
 
-    @PostMapping("/filterByTag")
-    public String filterByTag(@RequestParam(name="filter") String filter, Map<String, Object> model){
-        Iterable<Message> listOfMessages;
+    @PostMapping("/filterByWord")
+    public String filterByWord(@RequestParam(name="filter") String filter, Map<String, Object> model){
+        Iterable<Word> listOfWords;
         if(filter != null && !filter.isEmpty()){
-            listOfMessages = messageRepo.findByTag(filter);
+            listOfWords = wordRepo.findByWord(filter);
         }else{
-            listOfMessages = messageRepo.findAll();
+            listOfWords = wordRepo.findAll();
         }
-        model.put("messages", listOfMessages);
+        model.put("words", listOfWords);
+        return "main";
+    }
+
+
+    @PostMapping("/filterByTranslation")
+    public String filterByTranslation(@RequestParam(name="filter") String filter, Map<String, Object> model){
+        Iterable<Word> listOfWords;
+        if(filter != null && !filter.isEmpty()){
+            listOfWords = wordRepo.findByTranslation(filter);
+        }else{
+            listOfWords = wordRepo.findAll();
+        }
+        model.put("words", listOfWords);
         return "main";
     }
 
